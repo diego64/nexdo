@@ -1,0 +1,7 @@
+# Valida Conventional Commits (resumo em PT-BR): tipo(escopo): descrição
+if ! grep -qE '^(feat|fix|docs|style|refactor|perf|test|build|ci|chore|revert)(\([a-z0-9./-]+\))?!?: .+' "$1"; then
+  echo "❌ Mensagem de commit inválida."
+  echo "   Formato: tipo(escopo): descrição em PT-BR"
+  echo "   Exemplo: feat(spec-05): implementa matriz de permissões de tarefas"
+  exit 1
+fi

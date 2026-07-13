@@ -1,0 +1,19 @@
+# Normalização de fim de linha — evita CRLF↔LF corrompendo diffs (WSL/Windows/Linux)
+* text=auto eol=lf
+
+# Scripts shell e hooks sempre LF (quebram se virarem CRLF)
+*.sh    text eol=lf
+.husky/* text eol=lf
+
+# Lockfile: gerada — colapsa no diff e não conta como código nas estatísticas
+pnpm-lock.yaml linguist-generated=true -diff
+
+# Binários — nunca normalizar
+*.png  binary
+*.jpg  binary
+*.jpeg binary
+*.gif  binary
+*.ico  binary
+*.pdf  binary
+*.woff  binary
+*.woff2 binary

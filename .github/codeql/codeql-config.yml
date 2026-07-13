@@ -1,0 +1,15 @@
+name: Configuração CodeQL — nexdo
+
+# Suíte ampliada: vulnerabilidades + qualidade de código
+queries:
+  - uses: security-and-quality
+
+paths:
+  - src
+  - testes
+
+paths-ignore:
+  - node_modules
+  - dist
+  - coverage
+  - observabilidade

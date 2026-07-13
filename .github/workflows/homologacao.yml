@@ -1,0 +1,211 @@
+# Pipeline de Homologação — gate de qualidade completo.
+# Build -> Lint e Typecheck -> Testes Unitários -> Testes de Integração
+#   -> Testes E2E -> Cobertura e Quality Gate -> Verificar Dockerfile
+name: Homologação
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+concurrency:
+  group: homologacao-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  NODE_ENV: test
+  JWT_SECRET: segredo-de-teste-ci
+  JWT_EXPIRACAO: 15m
+  DATABASE_URL: postgresql://administrador:ci-ephemeral-pass@localhost:5432/nexdo
+  MONGODB_URI: mongodb://administrador:ci-ephemeral-pass@localhost:27017/nexdo_audit?authSource=admin
+
+jobs:
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+      - name: Compilar TypeScript
+        run: pnpm build
+
+  lint-e-typecheck:
+    name: Lint e Typecheck
+    runs-on: ubuntu-latest
+    needs: build
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+      - name: Lint
+        run: pnpm lint
+      - name: Typecheck
+        run: pnpm typecheck
+
+  testes-unitarios:
+    name: Testes Unitários
+    runs-on: ubuntu-latest
+    needs: lint-e-typecheck
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+      - name: Executar testes unitários
+        run: pnpm exec vitest run testes/unitario
+
+  testes-integracao:
+    name: Testes de Integração
+    runs-on: ubuntu-latest
+    needs: testes-unitarios
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: administrador
+          POSTGRES_PASSWORD: ci-ephemeral-pass
+          POSTGRES_DB: nexdo
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U administrador -d nexdo"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      mongo:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: administrador
+          MONGO_INITDB_ROOT_PASSWORD: ci-ephemeral-pass
+        ports: ['27017:27017']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+      - name: Executar migrations
+        run: pnpm run db:migrar
+      - name: Executar testes de integração
+        run: pnpm exec vitest run testes/integracao --passWithNoTests
+
+  testes-e2e:
+    name: Testes E2E
+    runs-on: ubuntu-latest
+    needs: testes-integracao
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: administrador
+          POSTGRES_PASSWORD: ci-ephemeral-pass
+          POSTGRES_DB: nexdo
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U administrador -d nexdo"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      mongo:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: administrador
+          MONGO_INITDB_ROOT_PASSWORD: ci-ephemeral-pass
+        ports: ['27017:27017']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+      - name: Executar migrations
+        run: pnpm run db:migrar
+      - name: Executar testes E2E
+        run: pnpm test:e2e
+
+  cobertura-e-quality-gate:
+    name: Cobertura e Quality Gate
+    runs-on: ubuntu-latest
+    needs: testes-e2e
+    services:
+      postgres:
+        image: postgres:16-alpine
+        env:
+          POSTGRES_USER: administrador
+          POSTGRES_PASSWORD: ci-ephemeral-pass
+          POSTGRES_DB: nexdo
+        ports: ['5432:5432']
+        options: >-
+          --health-cmd "pg_isready -U administrador -d nexdo"
+          --health-interval 5s --health-timeout 5s --health-retries 10
+      mongo:
+        image: mongo:7
+        env:
+          MONGO_INITDB_ROOT_USERNAME: administrador
+          MONGO_INITDB_ROOT_PASSWORD: ci-ephemeral-pass
+        ports: ['27017:27017']
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+        with:
+          version: 10
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: pnpm
+      - name: Instalar dependências
+        run: pnpm install --frozen-lockfile
+      - name: Executar migrations
+        run: pnpm run db:migrar
+      # Gate de 80% em src/aplicacao e src/dominio configurado no vitest.config (coverage.thresholds)
+      - name: Cobertura com quality gate
+        run: pnpm exec vitest run --coverage
+      - name: Publicar relatório de cobertura
+        uses: actions/upload-artifact@v7
+        with:
+          name: cobertura
+          path: coverage/
+          retention-days: 7
+
+  verificar-dockerfile:
+    name: Verificar Dockerfile
+    runs-on: ubuntu-latest
+    needs: cobertura-e-quality-gate
+    steps:
+      - uses: actions/checkout@v7
+      - name: Lint do Dockerfile (hadolint)
+        uses: hadolint/hadolint-action@v3.3.0
+        with:
+          dockerfile: Dockerfile
+      - name: Build da imagem (validação)
+        run: docker build -t nexdo:ci .

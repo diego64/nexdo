@@ -1,0 +1,41 @@
+# Pipeline de Pré-Produção — só roda quando a Homologação inteira passou na main.
+name: Pré-Produção
+
+on:
+  workflow_run:
+    workflows: [Homologação]
+    types: [completed]
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validar-candidato:
+    name: Validar candidato a release
+    runs-on: ubuntu-latest
+    # Gate: exige a Homologação 100% verde
+    if: github.event.workflow_run.conclusion == 'success'
+    environment: pre-producao
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+
+      - name: Build da imagem de release (sem push)
+        run: docker build -t nexdo:pre-producao .
+
+      - name: Smoke test do container
+        run: |
+          docker run -d --name nexdo-smoke \
+            -e NODE_ENV=production \
+            -e PORTA=3333 \
+            -e JWT_SECRET=segredo-smoke \
+            -e DATABASE_URL=postgresql://smoke:smoke@localhost:5432/nexdo \
+            -e MONGODB_URI=mongodb://smoke:smoke@localhost:27017/nexdo_audit?authSource=admin \
+            nexdo:pre-producao
+          sleep 5
+          # ponytail: smoke mínimo — o processo precisa estar vivo após o boot
+          docker ps --filter name=nexdo-smoke --filter status=running --format '{{.Names}}' | grep -q nexdo-smoke
+          docker logs nexdo-smoke
+          docker rm -f nexdo-smoke
