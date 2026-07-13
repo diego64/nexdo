@@ -1,10 +1,11 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { CriarUsuarioCasoDeUso } from '../../../aplicacao/casos-de-uso/autenticacao/criar-usuario.caso-de-uso.js';
-import { criarUsuarioEsquema } from '../esquemas/criar-usuario.esquema.js';
+import type { CriarUsuarioDTO } from '../esquemas/criar-usuario.esquema.js';
 
 export function criarUsuarioControlador(caso: CriarUsuarioCasoDeUso) {
   return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const dados = criarUsuarioEsquema.parse(request.body);
+    // Já validado pelo preHandler validarCorpo (SPEC 07).
+    const dados = request.body as CriarUsuarioDTO;
     const usuario = await caso.executar({
       name: dados.name,
       email: dados.email,

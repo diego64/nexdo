@@ -16,6 +16,11 @@ import {
   listarTarefasControlador,
   obterTarefaControlador,
 } from '../controladores/tarefa.controlador.js';
+import { validarCorpo, validarParams, validarQuery } from '../middlewares/validacao.middleware.js';
+import { criarTarefaEsquema } from '../esquemas/criar-tarefa.esquema.js';
+import { editarTarefaEsquema } from '../esquemas/editar-tarefa.esquema.js';
+import { filtrarTarefasEsquema } from '../esquemas/filtrar-tarefas.esquema.js';
+import { atribuirTarefaEsquema, tarefaIdParamEsquema } from '../esquemas/atribuir-tarefa.esquema.js';
 
 export interface DepsTarefas {
   criarTarefa: CriarTarefaCasoDeUso;
@@ -29,13 +34,41 @@ export interface DepsTarefas {
 
 // Toda a matriz de permissões vive nos casos de uso; aqui só exigimos autenticação.
 export function registrarRotasTarefas(app: FastifyInstance, deps: DepsTarefas): void {
-  const autenticado = { preHandler: [autenticar] };
+  const idParam = validarParams(tarefaIdParamEsquema);
 
-  app.post('/tarefas', autenticado, criarTarefaControlador(deps.criarTarefa));
-  app.get('/tarefas', autenticado, listarTarefasControlador(deps.listarTarefas));
-  app.get('/tarefas/:id', autenticado, obterTarefaControlador(deps.obterTarefa));
-  app.put('/tarefas/:id', autenticado, editarTarefaControlador(deps.editarTarefa));
-  app.delete('/tarefas/:id', autenticado, excluirTarefaControlador(deps.excluirTarefa));
-  app.patch('/tarefas/:id/atribuir', autenticado, atribuirTarefaControlador(deps.atribuirTarefa));
-  app.get('/tarefas/:id/historico', autenticado, listarHistoricoControlador(deps.listarHistorico));
+  app.post(
+    '/tarefas',
+    { preHandler: [autenticar, validarCorpo(criarTarefaEsquema)] },
+    criarTarefaControlador(deps.criarTarefa),
+  );
+  app.get(
+    '/tarefas',
+    { preHandler: [autenticar, validarQuery(filtrarTarefasEsquema)] },
+    listarTarefasControlador(deps.listarTarefas),
+  );
+  app.get(
+    '/tarefas/:id',
+    { preHandler: [autenticar, idParam] },
+    obterTarefaControlador(deps.obterTarefa),
+  );
+  app.put(
+    '/tarefas/:id',
+    { preHandler: [autenticar, idParam, validarCorpo(editarTarefaEsquema)] },
+    editarTarefaControlador(deps.editarTarefa),
+  );
+  app.delete(
+    '/tarefas/:id',
+    { preHandler: [autenticar, idParam] },
+    excluirTarefaControlador(deps.excluirTarefa),
+  );
+  app.patch(
+    '/tarefas/:id/atribuir',
+    { preHandler: [autenticar, idParam, validarCorpo(atribuirTarefaEsquema)] },
+    atribuirTarefaControlador(deps.atribuirTarefa),
+  );
+  app.get(
+    '/tarefas/:id/historico',
+    { preHandler: [autenticar, idParam] },
+    listarHistoricoControlador(deps.listarHistorico),
+  );
 }
