@@ -1,0 +1,52 @@
+{
+  "name": "nexdo",
+  "version": "0.1.0",
+  "description": "API de Gerenciamento de Tarefas — Spec-Driven Development",
+  "type": "module",
+  "private": true,
+  "packageManager": "pnpm@10.23.0",
+  "engines": {
+    "node": "22"
+  },
+  "scripts": {
+    "dev": "tsx watch src/main.ts",
+    "build": "tsc -p tsconfig.build.json",
+    "start": "node dist/main.js",
+    "test": "vitest run",
+    "test:e2e": "vitest run testes/e2e",
+    "test:carga": "vitest bench testes/carga",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "db:migrar": "tsx scripts/migrar.ts",
+    "db:seed": "tsx scripts/seed.ts",
+    "prepare": "husky"
+  },
+  "dependencies": {
+    "@fastify/cors": "^10.0.2",
+    "@fastify/jwt": "^9.0.3",
+    "bcrypt": "^5.1.1",
+    "dotenv": "^16.4.7",
+    "fastify": "^5.2.1",
+    "mongodb": "^6.12.0",
+    "pg": "^8.13.1",
+    "pino": "^9.6.0",
+    "pino-loki": "^2.5.0",
+    "zod": "^3.24.1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.18.0",
+    "@types/bcrypt": "^5.0.2",
+    "@types/node": "^22.10.7",
+    "@types/pg": "^8.11.10",
+    "@types/supertest": "^6.0.2",
+    "eslint": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "husky": "^9.1.7",
+    "prettier": "^3.4.2",
+    "supertest": "^7.0.0",
+    "tsx": "^4.19.2",
+    "typescript": "^5.7.3",
+    "typescript-eslint": "^8.21.0",
+    "vitest": "^3.0.2"
+  }
+}
