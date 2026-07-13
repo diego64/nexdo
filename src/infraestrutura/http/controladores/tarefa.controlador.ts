@@ -7,6 +7,7 @@ import type { ObterTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/taref
 import type { EditarTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/tarefas/editar-tarefa.caso-de-uso.js';
 import type { ExcluirTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/tarefas/excluir-tarefa.caso-de-uso.js';
 import type { AtribuirTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/tarefas/atribuir-tarefa.caso-de-uso.js';
+import type { ListarHistoricoTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/historico/listar-historico-tarefa.caso-de-uso.js';
 import { criarTarefaEsquema } from '../esquemas/criar-tarefa.esquema.js';
 import { editarTarefaEsquema } from '../esquemas/editar-tarefa.esquema.js';
 import { filtrarTarefasEsquema } from '../esquemas/filtrar-tarefas.esquema.js';
@@ -89,5 +90,14 @@ export function atribuirTarefaControlador(caso: AtribuirTarefaCasoDeUso) {
     const solicitante = solicitanteDe(request);
     const tarefa = await caso.executar({ id, userId: user_id, solicitante });
     reply.status(200).send(tarefa.paraResposta());
+  };
+}
+
+export function listarHistoricoControlador(caso: ListarHistoricoTarefaCasoDeUso) {
+  return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
+    const { id } = tarefaIdParamEsquema.parse(request.params);
+    const solicitante = solicitanteDe(request);
+    const historico = await caso.executar({ taskId: id, solicitante });
+    reply.status(200).send(historico.map((h) => h.paraResposta()));
   };
 }

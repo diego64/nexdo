@@ -6,11 +6,13 @@ import type { ObterTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/taref
 import type { EditarTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/tarefas/editar-tarefa.caso-de-uso.js';
 import type { ExcluirTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/tarefas/excluir-tarefa.caso-de-uso.js';
 import type { AtribuirTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/tarefas/atribuir-tarefa.caso-de-uso.js';
+import type { ListarHistoricoTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/historico/listar-historico-tarefa.caso-de-uso.js';
 import {
   atribuirTarefaControlador,
   criarTarefaControlador,
   editarTarefaControlador,
   excluirTarefaControlador,
+  listarHistoricoControlador,
   listarTarefasControlador,
   obterTarefaControlador,
 } from '../controladores/tarefa.controlador.js';
@@ -22,6 +24,7 @@ export interface DepsTarefas {
   editarTarefa: EditarTarefaCasoDeUso;
   excluirTarefa: ExcluirTarefaCasoDeUso;
   atribuirTarefa: AtribuirTarefaCasoDeUso;
+  listarHistorico: ListarHistoricoTarefaCasoDeUso;
 }
 
 // Toda a matriz de permissões vive nos casos de uso; aqui só exigimos autenticação.
@@ -34,4 +37,5 @@ export function registrarRotasTarefas(app: FastifyInstance, deps: DepsTarefas): 
   app.put('/tarefas/:id', autenticado, editarTarefaControlador(deps.editarTarefa));
   app.delete('/tarefas/:id', autenticado, excluirTarefaControlador(deps.excluirTarefa));
   app.patch('/tarefas/:id/atribuir', autenticado, atribuirTarefaControlador(deps.atribuirTarefa));
+  app.get('/tarefas/:id/historico', autenticado, listarHistoricoControlador(deps.listarHistorico));
 }
