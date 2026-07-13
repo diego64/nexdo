@@ -18,6 +18,13 @@ export interface DadosTarefa {
   priority: PrioridadeTarefa;
 }
 
+/** Transição de status a registrar em tasks_history, na MESMA transação. */
+export interface TransicaoStatus {
+  changedBy: number;
+  oldStatus: StatusTarefa;
+  newStatus: StatusTarefa;
+}
+
 export interface FiltrosTarefa {
   status?: StatusTarefa;
   prioridade?: PrioridadeTarefa;
@@ -43,7 +50,11 @@ export interface ITarefaRepositorio {
     pagina: number,
     limite: number,
   ): Promise<PaginaTarefas>;
-  editar(id: number, dados: DadosTarefa): Promise<Tarefa | null>;
+  /**
+   * Edita a tarefa. Se `transicao` for informada (mudança de status), o UPDATE
+   * de `tasks` e o INSERT em `tasks_history` ocorrem na MESMA transação PG.
+   */
+  editar(id: number, dados: DadosTarefa, transicao?: TransicaoStatus): Promise<Tarefa | null>;
   excluir(id: number): Promise<boolean>;
   atribuir(id: number, assignedTo: number): Promise<Tarefa | null>;
 }

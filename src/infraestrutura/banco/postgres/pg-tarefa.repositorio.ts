@@ -8,6 +8,7 @@ import type {
   ITarefaRepositorio,
   NovaTarefa,
   PaginaTarefas,
+  TransicaoStatus,
 } from '../../../dominio/repositorios/tarefa.repositorio.js';
 
 interface LinhaTarefa {
@@ -104,13 +105,44 @@ export class PgTarefaRepositorio implements ITarefaRepositorio {
     };
   }
 
-  async editar(id: number, dados: DadosTarefa): Promise<Tarefa | null> {
-    const { rows } = await this.pool.query<LinhaTarefa>(
-      `UPDATE tasks SET title = $2, description = $3, status = $4, priority = $5
-       WHERE id = $1 RETURNING *`,
-      [id, dados.title, dados.description, dados.status, dados.priority],
-    );
-    return rows[0] ? paraEntidade(rows[0]) : null;
+  async editar(
+    id: number,
+    dados: DadosTarefa,
+    transicao?: TransicaoStatus,
+  ): Promise<Tarefa | null> {
+    const sqlUpdate = `UPDATE tasks SET title = $2, description = $3, status = $4, priority = $5
+       WHERE id = $1 RETURNING *`;
+    const paramsUpdate = [id, dados.title, dados.description, dados.status, dados.priority];
+
+    // Sem mudança de status: UPDATE simples.
+    if (!transicao) {
+      const { rows } = await this.pool.query<LinhaTarefa>(sqlUpdate, paramsUpdate);
+      return rows[0] ? paraEntidade(rows[0]) : null;
+    }
+
+    // Com mudança de status: UPDATE tasks + INSERT tasks_history na MESMA transação.
+    // Falha no INSERT do histórico faz ROLLBACK da mudança de status.
+    const cliente = await this.pool.connect();
+    try {
+      await cliente.query('BEGIN');
+      const { rows } = await cliente.query<LinhaTarefa>(sqlUpdate, paramsUpdate);
+      if (!rows[0]) {
+        await cliente.query('ROLLBACK');
+        return null;
+      }
+      await cliente.query(
+        `INSERT INTO tasks_history (task_id, changed_by, old_status, new_status)
+         VALUES ($1, $2, $3, $4)`,
+        [id, transicao.changedBy, transicao.oldStatus, transicao.newStatus],
+      );
+      await cliente.query('COMMIT');
+      return paraEntidade(rows[0]);
+    } catch (erro) {
+      await cliente.query('ROLLBACK');
+      throw erro;
+    } finally {
+      cliente.release();
+    }
   }
 
   async excluir(id: number): Promise<boolean> {

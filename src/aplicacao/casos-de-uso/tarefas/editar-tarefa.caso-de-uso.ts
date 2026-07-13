@@ -40,24 +40,47 @@ export class EditarTarefaCasoDeUso {
     }
 
     const { dados } = entrada;
-    const atualizada = await this.tarefas.editar(entrada.id, {
-      title: dados.title ?? atual.title,
-      description: dados.description !== undefined ? dados.description : atual.description,
-      status: dados.status ?? atual.status,
-      priority: dados.priority ?? atual.priority,
-    });
+    const novoStatus = dados.status ?? atual.status;
+    const mudouStatus = novoStatus !== atual.status;
+
+    // Mudança de status → UPDATE tasks + INSERT tasks_history na mesma transação.
+    const atualizada = await this.tarefas.editar(
+      entrada.id,
+      {
+        title: dados.title ?? atual.title,
+        description: dados.description !== undefined ? dados.description : atual.description,
+        status: novoStatus,
+        priority: dados.priority ?? atual.priority,
+      },
+      mudouStatus
+        ? {
+            changedBy: entrada.solicitante.id,
+            oldStatus: atual.status,
+            newStatus: novoStatus,
+          }
+        : undefined,
+    );
     if (!atualizada) {
       throw new ErroNaoEncontrado('Tarefa não encontrada');
     }
 
-    // Nota: o registro de tasks_history na mudança de status é da SPEC 06
-    // (mesma transação). Aqui só auditamos a atualização.
+    const ator = { user_id: entrada.solicitante.id, role: entrada.solicitante.papel };
     void this.auditoria.registrar({
       tipo: 'tarefa.atualizada',
-      ator: { user_id: entrada.solicitante.id, role: entrada.solicitante.papel },
+      ator,
       recurso: { type: 'task', id: atualizada.id },
       payload: { ...atualizada.paraResposta() },
     });
+
+    // Auditoria da transição de status (fire-and-forget, FORA da transação PG).
+    if (mudouStatus) {
+      void this.auditoria.registrar({
+        tipo: 'tarefa.status-alterado',
+        ator,
+        recurso: { type: 'task', id: atualizada.id },
+        payload: { old_status: atual.status, new_status: novoStatus },
+      });
+    }
 
     return atualizada;
   }

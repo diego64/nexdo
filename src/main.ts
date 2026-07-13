@@ -9,6 +9,7 @@ import { PgUsuarioRepositorio } from './infraestrutura/banco/postgres/pg-usuario
 import { PgTimeRepositorio } from './infraestrutura/banco/postgres/pg-time.repositorio.js';
 import { PgMembroTimeRepositorio } from './infraestrutura/banco/postgres/pg-membro-time.repositorio.js';
 import { PgTarefaRepositorio } from './infraestrutura/banco/postgres/pg-tarefa.repositorio.js';
+import { PgHistoricoTarefaRepositorio } from './infraestrutura/banco/postgres/pg-historico-tarefa.repositorio.js';
 import { MongoAuditoriaRepositorio } from './infraestrutura/banco/mongo/mongo-auditoria.repositorio.js';
 import { BcryptHasher } from './infraestrutura/seguranca/bcrypt-hasher.js';
 import { CriarUsuarioCasoDeUso } from './aplicacao/casos-de-uso/autenticacao/criar-usuario.caso-de-uso.js';
@@ -26,6 +27,7 @@ import { ObterTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/obter-tar
 import { EditarTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/editar-tarefa.caso-de-uso.js';
 import { ExcluirTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/excluir-tarefa.caso-de-uso.js';
 import { AtribuirTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/atribuir-tarefa.caso-de-uso.js';
+import { ListarHistoricoTarefaCasoDeUso } from './aplicacao/casos-de-uso/historico/listar-historico-tarefa.caso-de-uso.js';
 import { tratadorDeErros } from './infraestrutura/http/middlewares/erros.middleware.js';
 import { registrarRotasAutenticacao } from './infraestrutura/http/rotas/autenticacao.rotas.js';
 import { registrarRotasTimes } from './infraestrutura/http/rotas/time.rotas.js';
@@ -54,6 +56,7 @@ export function construirApp(config: Config): FastifyInstance {
   const timeRepositorio = new PgTimeRepositorio(pool);
   const membroTimeRepositorio = new PgMembroTimeRepositorio(pool);
   const tarefaRepositorio = new PgTarefaRepositorio(pool);
+  const historicoTarefaRepositorio = new PgHistoricoTarefaRepositorio(pool);
   const auditoria = new MongoAuditoriaRepositorio();
   const hasher = new BcryptHasher();
 
@@ -84,6 +87,11 @@ export function construirApp(config: Config): FastifyInstance {
     editarTarefa: new EditarTarefaCasoDeUso(tarefaRepositorio, auditoria),
     excluirTarefa: new ExcluirTarefaCasoDeUso(tarefaRepositorio, auditoria),
     atribuirTarefa: new AtribuirTarefaCasoDeUso(tarefaRepositorio, membroTimeRepositorio, auditoria),
+    listarHistorico: new ListarHistoricoTarefaCasoDeUso(
+      tarefaRepositorio,
+      membroTimeRepositorio,
+      historicoTarefaRepositorio,
+    ),
   });
 
   return app;
