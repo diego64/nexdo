@@ -18,6 +18,15 @@ import {
   listarTimesControlador,
   removerMembroControlador,
 } from '../controladores/time.controlador.js';
+import { validarCorpo, validarParams, validarQuery } from '../middlewares/validacao.middleware.js';
+import { criarTimeEsquema } from '../esquemas/criar-time.esquema.js';
+import { editarTimeEsquema } from '../esquemas/editar-time.esquema.js';
+import {
+  adicionarMembroEsquema,
+  idParamEsquema,
+  membroParamsEsquema,
+  paginacaoEsquema,
+} from '../esquemas/adicionar-membro.esquema.js';
 
 export interface DepsTimes {
   criarTime: CriarTimeCasoDeUso;
@@ -30,23 +39,43 @@ export interface DepsTimes {
 }
 
 export function registrarRotasTimes(app: FastifyInstance, deps: DepsTimes): void {
-  const somenteAdmin = { preHandler: [autenticar, exigirPapel(PapelUsuario.Admin)] };
+  const admin = [autenticar, exigirPapel(PapelUsuario.Admin)];
 
-  app.post('/times', somenteAdmin, criarTimeControlador(deps.criarTime));
-  app.get('/times', somenteAdmin, listarTimesControlador(deps.listarTimes));
-  app.put('/times/:id', somenteAdmin, editarTimeControlador(deps.editarTime));
-  app.delete('/times/:id', somenteAdmin, excluirTimeControlador(deps.excluirTime));
-  app.post('/times/:id/membros', somenteAdmin, adicionarMembroControlador(deps.adicionarMembro));
+  app.post(
+    '/times',
+    { preHandler: [...admin, validarCorpo(criarTimeEsquema)] },
+    criarTimeControlador(deps.criarTime),
+  );
+  app.get(
+    '/times',
+    { preHandler: [...admin, validarQuery(paginacaoEsquema)] },
+    listarTimesControlador(deps.listarTimes),
+  );
+  app.put(
+    '/times/:id',
+    { preHandler: [...admin, validarParams(idParamEsquema), validarCorpo(editarTimeEsquema)] },
+    editarTimeControlador(deps.editarTime),
+  );
+  app.delete(
+    '/times/:id',
+    { preHandler: [...admin, validarParams(idParamEsquema)] },
+    excluirTimeControlador(deps.excluirTime),
+  );
+  app.post(
+    '/times/:id/membros',
+    { preHandler: [...admin, validarParams(idParamEsquema), validarCorpo(adicionarMembroEsquema)] },
+    adicionarMembroControlador(deps.adicionarMembro),
+  );
   app.delete(
     '/times/:id/membros/:userId',
-    somenteAdmin,
+    { preHandler: [...admin, validarParams(membroParamsEsquema)] },
     removerMembroControlador(deps.removerMembro),
   );
 
   // admin OU member do time — autz fina fica no caso de uso.
   app.get(
     '/times/:id/membros',
-    { preHandler: [autenticar] },
+    { preHandler: [autenticar, validarParams(idParamEsquema)] },
     listarMembrosControlador(deps.listarMembros),
   );
 }

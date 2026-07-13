@@ -17,7 +17,8 @@ export function tratadorDeErros(
   reply: FastifyReply,
 ): void {
   if (erro instanceof ZodError) {
-    reply.status(400).send(envelope('validacao', 'Dados inválidos', erro.flatten()));
+    // Envelope de validação da borda HTTP (SPEC 07): issues detalham cada campo.
+    reply.status(400).send(envelope('VALIDACAO', 'Dados inválidos', erro.issues));
     return;
   }
 

@@ -29,6 +29,7 @@ import { ExcluirTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/excluir
 import { AtribuirTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/atribuir-tarefa.caso-de-uso.js';
 import { ListarHistoricoTarefaCasoDeUso } from './aplicacao/casos-de-uso/historico/listar-historico-tarefa.caso-de-uso.js';
 import { tratadorDeErros } from './infraestrutura/http/middlewares/erros.middleware.js';
+import { configurarValidacaoPtBr } from './infraestrutura/http/middlewares/validacao.middleware.js';
 import { registrarRotasAutenticacao } from './infraestrutura/http/rotas/autenticacao.rotas.js';
 import { registrarRotasTimes } from './infraestrutura/http/rotas/time.rotas.js';
 import { registrarRotasTarefas } from './infraestrutura/http/rotas/tarefa.rotas.js';
@@ -41,6 +42,8 @@ export function construirApp(config: Config): FastifyInstance {
   const app = Fastify({
     logger: config.nodeEnv === 'test' ? false : { level: 'info' },
   });
+
+  configurarValidacaoPtBr(); // mensagens de validação Zod em PT-BR (SPEC 07)
 
   app.register(fastifyCors, { origin: config.corsOrigens });
   app.register(fastifyJwt, {

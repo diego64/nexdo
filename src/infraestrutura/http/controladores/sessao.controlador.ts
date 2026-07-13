@@ -1,10 +1,10 @@
 import type { FastifyReply, FastifyRequest } from 'fastify';
 import type { AutenticarUsuarioCasoDeUso } from '../../../aplicacao/casos-de-uso/autenticacao/autenticar-usuario.caso-de-uso.js';
-import { autenticarEsquema } from '../esquemas/autenticar.esquema.js';
+import type { AutenticarDTO } from '../esquemas/autenticar.esquema.js';
 
 export function autenticarControlador(caso: AutenticarUsuarioCasoDeUso) {
   return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const dados = autenticarEsquema.parse(request.body);
+    const dados = request.body as AutenticarDTO;
     const usuario = await caso.executar({ email: dados.email, senha: dados.password });
 
     // Emissão do JWT é responsabilidade da borda HTTP (payload mínimo).

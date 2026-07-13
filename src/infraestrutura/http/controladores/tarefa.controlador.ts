@@ -8,11 +8,12 @@ import type { EditarTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/tare
 import type { ExcluirTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/tarefas/excluir-tarefa.caso-de-uso.js';
 import type { AtribuirTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/tarefas/atribuir-tarefa.caso-de-uso.js';
 import type { ListarHistoricoTarefaCasoDeUso } from '../../../aplicacao/casos-de-uso/historico/listar-historico-tarefa.caso-de-uso.js';
-import { criarTarefaEsquema } from '../esquemas/criar-tarefa.esquema.js';
-import { editarTarefaEsquema } from '../esquemas/editar-tarefa.esquema.js';
-import { filtrarTarefasEsquema } from '../esquemas/filtrar-tarefas.esquema.js';
-import { atribuirTarefaEsquema, tarefaIdParamEsquema } from '../esquemas/atribuir-tarefa.esquema.js';
+import type { CriarTarefaDTO } from '../esquemas/criar-tarefa.esquema.js';
+import type { EditarTarefaDTO } from '../esquemas/editar-tarefa.esquema.js';
+import type { FiltrarTarefasDTO } from '../esquemas/filtrar-tarefas.esquema.js';
+import type { AtribuirTarefaDTO } from '../esquemas/atribuir-tarefa.esquema.js';
 
+// Dados já validados/coeridos pelos preHandlers de validação (SPEC 07).
 function solicitanteDe(request: FastifyRequest): UsuarioAutenticado {
   if (!request.usuario) {
     throw new ErroNaoAutorizado('Não autenticado');
@@ -22,8 +23,7 @@ function solicitanteDe(request: FastifyRequest): UsuarioAutenticado {
 
 export function criarTarefaControlador(caso: CriarTarefaCasoDeUso) {
   return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const dados = criarTarefaEsquema.parse(request.body);
-    const solicitante = solicitanteDe(request);
+    const dados = request.body as CriarTarefaDTO;
     const tarefa = await caso.executar({
       title: dados.title,
       description: dados.description ?? null,
@@ -31,7 +31,7 @@ export function criarTarefaControlador(caso: CriarTarefaCasoDeUso) {
       priority: dados.priority,
       assignedTo: dados.assigned_to ?? null,
       teamId: dados.team_id,
-      solicitante,
+      solicitante: solicitanteDe(request),
     });
     reply.status(201).send(tarefa.paraResposta());
   };
@@ -39,13 +39,12 @@ export function criarTarefaControlador(caso: CriarTarefaCasoDeUso) {
 
 export function listarTarefasControlador(caso: ListarTarefasCasoDeUso) {
   return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const q = filtrarTarefasEsquema.parse(request.query);
-    const solicitante = solicitanteDe(request);
+    const q = request.query as FiltrarTarefasDTO;
     const resultado = await caso.executar({
       filtros: { status: q.status, prioridade: q.prioridade, time: q.time },
       pagina: q.pagina,
       limite: q.limite,
-      solicitante,
+      solicitante: solicitanteDe(request),
     });
     reply.status(200).send({
       dados: resultado.dados.map((t) => t.paraResposta()),
@@ -57,47 +56,42 @@ export function listarTarefasControlador(caso: ListarTarefasCasoDeUso) {
 
 export function obterTarefaControlador(caso: ObterTarefaCasoDeUso) {
   return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const { id } = tarefaIdParamEsquema.parse(request.params);
-    const solicitante = solicitanteDe(request);
-    const tarefa = await caso.executar({ id, solicitante });
+    const { id } = request.params as { id: number };
+    const tarefa = await caso.executar({ id, solicitante: solicitanteDe(request) });
     reply.status(200).send(tarefa.paraResposta());
   };
 }
 
 export function editarTarefaControlador(caso: EditarTarefaCasoDeUso) {
   return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const { id } = tarefaIdParamEsquema.parse(request.params);
-    const dados = editarTarefaEsquema.parse(request.body);
-    const solicitante = solicitanteDe(request);
-    const tarefa = await caso.executar({ id, dados, solicitante });
+    const { id } = request.params as { id: number };
+    const dados = request.body as EditarTarefaDTO;
+    const tarefa = await caso.executar({ id, dados, solicitante: solicitanteDe(request) });
     reply.status(200).send(tarefa.paraResposta());
   };
 }
 
 export function excluirTarefaControlador(caso: ExcluirTarefaCasoDeUso) {
   return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const { id } = tarefaIdParamEsquema.parse(request.params);
-    const solicitante = solicitanteDe(request);
-    await caso.executar({ id, solicitante });
+    const { id } = request.params as { id: number };
+    await caso.executar({ id, solicitante: solicitanteDe(request) });
     reply.status(204).send();
   };
 }
 
 export function atribuirTarefaControlador(caso: AtribuirTarefaCasoDeUso) {
   return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const { id } = tarefaIdParamEsquema.parse(request.params);
-    const { user_id } = atribuirTarefaEsquema.parse(request.body);
-    const solicitante = solicitanteDe(request);
-    const tarefa = await caso.executar({ id, userId: user_id, solicitante });
+    const { id } = request.params as { id: number };
+    const { user_id } = request.body as AtribuirTarefaDTO;
+    const tarefa = await caso.executar({ id, userId: user_id, solicitante: solicitanteDe(request) });
     reply.status(200).send(tarefa.paraResposta());
   };
 }
 
 export function listarHistoricoControlador(caso: ListarHistoricoTarefaCasoDeUso) {
   return async function (request: FastifyRequest, reply: FastifyReply): Promise<void> {
-    const { id } = tarefaIdParamEsquema.parse(request.params);
-    const solicitante = solicitanteDe(request);
-    const historico = await caso.executar({ taskId: id, solicitante });
+    const { id } = request.params as { id: number };
+    const historico = await caso.executar({ taskId: id, solicitante: solicitanteDe(request) });
     reply.status(200).send(historico.map((h) => h.paraResposta()));
   };
 }
