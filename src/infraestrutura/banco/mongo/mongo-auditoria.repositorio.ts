@@ -1,3 +1,5 @@
+import { randomUUID } from 'node:crypto';
+import type { Db } from 'mongodb';
 import type {
   EventoDeAuditoria,
   IAuditoriaRepositorio,
@@ -6,14 +8,27 @@ import { obterDb } from './conexao.js';
 
 const COLLECTION = 'audit_events';
 
+let indicesGarantidos = false;
+
+async function garantirIndices(db: Db): Promise<void> {
+  if (indicesGarantidos) return;
+  await db.collection(COLLECTION).createIndexes([
+    { key: { occurred_at: -1 } },
+    { key: { 'resource.type': 1, 'resource.id': 1, occurred_at: -1 } },
+    { key: { event_type: 1, occurred_at: -1 } },
+  ]);
+  indicesGarantidos = true;
+}
+
 function paraDocumento(evento: EventoDeAuditoria): Record<string, unknown> {
   return {
-    type: evento.tipo,
+    event_id: randomUUID(),
+    event_type: evento.tipo,
+    occurred_at: new Date(),
     actor: evento.ator ?? null,
-    entity: evento.entidade ?? null,
-    entity_id: evento.entidadeId ?? null,
-    data: evento.dados ?? {},
-    recorded_at: new Date(),
+    resource: evento.recurso ?? null,
+    payload: evento.payload ?? {},
+    metadata: evento.metadata ?? {},
   };
 }
 
@@ -22,6 +37,7 @@ export class MongoAuditoriaRepositorio implements IAuditoriaRepositorio {
     // Fire-and-forget: qualquer falha vira warning, nunca propaga (CLAUDE.md §5).
     try {
       const db = await obterDb();
+      await garantirIndices(db);
       await db.collection(COLLECTION).insertOne(paraDocumento(evento));
     } catch (erro) {
       console.warn(`[auditoria] falha ao registrar evento "${evento.tipo}":`, erro);

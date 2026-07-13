@@ -4,7 +4,8 @@
 FROM node:22-alpine AS build
 WORKDIR /app
 
-RUN corepack enable
+# Ferramentas para compilar módulos nativos (bcrypt) em musl/alpine.
+RUN apk add --no-cache python3 make g++ && corepack enable
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile
 
