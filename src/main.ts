@@ -8,6 +8,7 @@ import { obterPool } from './infraestrutura/banco/postgres/conexao.js';
 import { PgUsuarioRepositorio } from './infraestrutura/banco/postgres/pg-usuario.repositorio.js';
 import { PgTimeRepositorio } from './infraestrutura/banco/postgres/pg-time.repositorio.js';
 import { PgMembroTimeRepositorio } from './infraestrutura/banco/postgres/pg-membro-time.repositorio.js';
+import { PgTarefaRepositorio } from './infraestrutura/banco/postgres/pg-tarefa.repositorio.js';
 import { MongoAuditoriaRepositorio } from './infraestrutura/banco/mongo/mongo-auditoria.repositorio.js';
 import { BcryptHasher } from './infraestrutura/seguranca/bcrypt-hasher.js';
 import { CriarUsuarioCasoDeUso } from './aplicacao/casos-de-uso/autenticacao/criar-usuario.caso-de-uso.js';
@@ -19,9 +20,16 @@ import { ExcluirTimeCasoDeUso } from './aplicacao/casos-de-uso/times/excluir-tim
 import { AdicionarMembroCasoDeUso } from './aplicacao/casos-de-uso/times/adicionar-membro.caso-de-uso.js';
 import { RemoverMembroCasoDeUso } from './aplicacao/casos-de-uso/times/remover-membro.caso-de-uso.js';
 import { ListarMembrosCasoDeUso } from './aplicacao/casos-de-uso/times/listar-membros.caso-de-uso.js';
+import { CriarTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/criar-tarefa.caso-de-uso.js';
+import { ListarTarefasCasoDeUso } from './aplicacao/casos-de-uso/tarefas/listar-tarefas.caso-de-uso.js';
+import { ObterTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/obter-tarefa.caso-de-uso.js';
+import { EditarTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/editar-tarefa.caso-de-uso.js';
+import { ExcluirTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/excluir-tarefa.caso-de-uso.js';
+import { AtribuirTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/atribuir-tarefa.caso-de-uso.js';
 import { tratadorDeErros } from './infraestrutura/http/middlewares/erros.middleware.js';
 import { registrarRotasAutenticacao } from './infraestrutura/http/rotas/autenticacao.rotas.js';
 import { registrarRotasTimes } from './infraestrutura/http/rotas/time.rotas.js';
+import { registrarRotasTarefas } from './infraestrutura/http/rotas/tarefa.rotas.js';
 
 /**
  * Composition root: instancia dependências (injeção manual) e registra rotas.
@@ -45,6 +53,7 @@ export function construirApp(config: Config): FastifyInstance {
   const usuarioRepositorio = new PgUsuarioRepositorio(pool);
   const timeRepositorio = new PgTimeRepositorio(pool);
   const membroTimeRepositorio = new PgMembroTimeRepositorio(pool);
+  const tarefaRepositorio = new PgTarefaRepositorio(pool);
   const auditoria = new MongoAuditoriaRepositorio();
   const hasher = new BcryptHasher();
 
@@ -67,6 +76,14 @@ export function construirApp(config: Config): FastifyInstance {
     ),
     removerMembro: new RemoverMembroCasoDeUso(membroTimeRepositorio, auditoria),
     listarMembros: new ListarMembrosCasoDeUso(timeRepositorio, membroTimeRepositorio),
+  });
+  registrarRotasTarefas(app, {
+    criarTarefa: new CriarTarefaCasoDeUso(tarefaRepositorio, membroTimeRepositorio, auditoria),
+    listarTarefas: new ListarTarefasCasoDeUso(tarefaRepositorio, membroTimeRepositorio),
+    obterTarefa: new ObterTarefaCasoDeUso(tarefaRepositorio, membroTimeRepositorio),
+    editarTarefa: new EditarTarefaCasoDeUso(tarefaRepositorio, auditoria),
+    excluirTarefa: new ExcluirTarefaCasoDeUso(tarefaRepositorio, auditoria),
+    atribuirTarefa: new AtribuirTarefaCasoDeUso(tarefaRepositorio, membroTimeRepositorio, auditoria),
   });
 
   return app;

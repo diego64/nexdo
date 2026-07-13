@@ -36,6 +36,14 @@ export class PgMembroTimeRepositorio implements IMembroTimeRepositorio {
     return (rowCount ?? 0) > 0;
   }
 
+  async timesDoUsuario(userId: number): Promise<number[]> {
+    const { rows } = await this.pool.query<{ team_id: number }>(
+      'SELECT team_id FROM team_members WHERE user_id = $1',
+      [userId],
+    );
+    return rows.map((r) => r.team_id);
+  }
+
   async listarPorTime(teamId: number): Promise<MembroDoTime[]> {
     const { rows } = await this.pool.query<LinhaMembro>(
       `SELECT u.id AS user_id, u.name, u.email, u.role
