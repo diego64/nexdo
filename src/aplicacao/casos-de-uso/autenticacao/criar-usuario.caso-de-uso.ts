@@ -34,9 +34,9 @@ export class CriarUsuarioCasoDeUso {
 
     void this.auditoria.registrar({
       tipo: 'usuario.criado',
-      ator: usuario.id,
-      entidade: 'user',
-      entidadeId: usuario.id,
+      ator: { user_id: usuario.id, role: usuario.papel },
+      recurso: { type: 'user', id: usuario.id },
+      payload: { email: usuario.email, role: usuario.papel },
     });
 
     return usuario;

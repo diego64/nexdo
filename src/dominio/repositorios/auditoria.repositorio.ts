@@ -1,11 +1,22 @@
+// Envelope conforme .specs/contratos/eventos-auditoria.md.
+
+export interface AtorAuditoria {
+  user_id: number | null;
+  role?: string | null;
+}
+
+export interface RecursoAuditoria {
+  type: 'task' | 'team' | 'user' | 'session';
+  id: number | null;
+}
+
 export interface EventoDeAuditoria {
-  /** Ex.: 'usuario.criado', 'sessao.iniciada', 'sessao.falhou'. */
+  /** event_type do catálogo: 'usuario.criado', 'time.criado', etc. */
   tipo: string;
-  /** Id do usuário que originou o evento, quando houver. */
-  ator?: number | null;
-  entidade?: string;
-  entidadeId?: number | null;
-  dados?: Record<string, unknown>;
+  ator?: AtorAuditoria;
+  recurso?: RecursoAuditoria;
+  payload?: Record<string, unknown>;
+  metadata?: Record<string, unknown>;
 }
 
 export interface IAuditoriaRepositorio {

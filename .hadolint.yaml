@@ -1,0 +1,4 @@
+# Pinar versões de pacotes apk (python3/make/g++) no Alpine é frágil: as
+# versões mudam a cada release do repositório e quebram o build sem ganho real.
+ignored:
+  - DL3018

@@ -6,12 +6,22 @@ import fastifyJwt from '@fastify/jwt';
 import { carregarConfig, type Config } from './compartilhado/config.js';
 import { obterPool } from './infraestrutura/banco/postgres/conexao.js';
 import { PgUsuarioRepositorio } from './infraestrutura/banco/postgres/pg-usuario.repositorio.js';
+import { PgTimeRepositorio } from './infraestrutura/banco/postgres/pg-time.repositorio.js';
+import { PgMembroTimeRepositorio } from './infraestrutura/banco/postgres/pg-membro-time.repositorio.js';
 import { MongoAuditoriaRepositorio } from './infraestrutura/banco/mongo/mongo-auditoria.repositorio.js';
 import { BcryptHasher } from './infraestrutura/seguranca/bcrypt-hasher.js';
 import { CriarUsuarioCasoDeUso } from './aplicacao/casos-de-uso/autenticacao/criar-usuario.caso-de-uso.js';
 import { AutenticarUsuarioCasoDeUso } from './aplicacao/casos-de-uso/autenticacao/autenticar-usuario.caso-de-uso.js';
+import { CriarTimeCasoDeUso } from './aplicacao/casos-de-uso/times/criar-time.caso-de-uso.js';
+import { ListarTimesCasoDeUso } from './aplicacao/casos-de-uso/times/listar-times.caso-de-uso.js';
+import { EditarTimeCasoDeUso } from './aplicacao/casos-de-uso/times/editar-time.caso-de-uso.js';
+import { ExcluirTimeCasoDeUso } from './aplicacao/casos-de-uso/times/excluir-time.caso-de-uso.js';
+import { AdicionarMembroCasoDeUso } from './aplicacao/casos-de-uso/times/adicionar-membro.caso-de-uso.js';
+import { RemoverMembroCasoDeUso } from './aplicacao/casos-de-uso/times/remover-membro.caso-de-uso.js';
+import { ListarMembrosCasoDeUso } from './aplicacao/casos-de-uso/times/listar-membros.caso-de-uso.js';
 import { tratadorDeErros } from './infraestrutura/http/middlewares/erros.middleware.js';
 import { registrarRotasAutenticacao } from './infraestrutura/http/rotas/autenticacao.rotas.js';
+import { registrarRotasTimes } from './infraestrutura/http/rotas/time.rotas.js';
 
 /**
  * Composition root: instancia dependências (injeção manual) e registra rotas.
@@ -33,6 +43,8 @@ export function construirApp(config: Config): FastifyInstance {
   // --- Injeção de dependências (manual, sem container) ---
   const pool = obterPool();
   const usuarioRepositorio = new PgUsuarioRepositorio(pool);
+  const timeRepositorio = new PgTimeRepositorio(pool);
+  const membroTimeRepositorio = new PgMembroTimeRepositorio(pool);
   const auditoria = new MongoAuditoriaRepositorio();
   const hasher = new BcryptHasher();
 
@@ -42,6 +54,20 @@ export function construirApp(config: Config): FastifyInstance {
   // --- Rotas ---
   app.get('/saude', async () => ({ status: 'ok' }));
   registrarRotasAutenticacao(app, { criarUsuario, autenticar });
+  registrarRotasTimes(app, {
+    criarTime: new CriarTimeCasoDeUso(timeRepositorio, auditoria),
+    listarTimes: new ListarTimesCasoDeUso(timeRepositorio),
+    editarTime: new EditarTimeCasoDeUso(timeRepositorio, auditoria),
+    excluirTime: new ExcluirTimeCasoDeUso(timeRepositorio, auditoria),
+    adicionarMembro: new AdicionarMembroCasoDeUso(
+      timeRepositorio,
+      membroTimeRepositorio,
+      usuarioRepositorio,
+      auditoria,
+    ),
+    removerMembro: new RemoverMembroCasoDeUso(membroTimeRepositorio, auditoria),
+    listarMembros: new ListarMembrosCasoDeUso(timeRepositorio, membroTimeRepositorio),
+  });
 
   return app;
 }

@@ -23,12 +23,19 @@ export class AutenticarUsuarioCasoDeUso {
     if (!usuario || !(await this.hasher.comparar(entrada.senha, usuario.senhaHash))) {
       void this.auditoria.registrar({
         tipo: 'sessao.falhou',
-        dados: { email: entrada.email },
+        ator: { user_id: null },
+        recurso: { type: 'session', id: null },
+        payload: { email: entrada.email, motivo: 'credenciais_invalidas' },
       });
       throw new ErroNaoAutorizado('Credenciais inválidas');
     }
 
-    void this.auditoria.registrar({ tipo: 'sessao.iniciada', ator: usuario.id });
+    void this.auditoria.registrar({
+      tipo: 'sessao.iniciada',
+      ator: { user_id: usuario.id, role: usuario.papel },
+      recurso: { type: 'session', id: usuario.id },
+      payload: { email: usuario.email },
+    });
     return usuario;
   }
 }

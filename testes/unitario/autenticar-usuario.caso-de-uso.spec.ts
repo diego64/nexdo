@@ -34,7 +34,10 @@ describe('Funcionalidade: Login', () => {
 
     expect(usuario.id).toBe(7);
     expect(auditoria.registrar).toHaveBeenCalledWith(
-      expect.objectContaining({ tipo: 'sessao.iniciada', ator: 7 }),
+      expect.objectContaining({
+        tipo: 'sessao.iniciada',
+        ator: expect.objectContaining({ user_id: 7 }),
+      }),
     );
   });
 

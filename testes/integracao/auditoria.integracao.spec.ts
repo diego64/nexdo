@@ -10,7 +10,7 @@ describe.skipIf(!disponivel)('Funcionalidade: Auditoria no Mongo', () => {
 
   beforeAll(async () => {
     const db = await obterDb();
-    await db.collection('audit_events').deleteMany({ type: 'usuario.criado' });
+    await db.collection('audit_events').deleteMany({ event_type: 'usuario.criado' });
   });
 
   afterAll(async () => {
@@ -18,13 +18,21 @@ describe.skipIf(!disponivel)('Funcionalidade: Auditoria no Mongo', () => {
   });
 
   it('deve gravar o evento usuario.criado na collection audit_events', async () => {
-    await auditoria.registrar({ tipo: 'usuario.criado', ator: 99, entidade: 'user', entidadeId: 99 });
+    await auditoria.registrar({
+      tipo: 'usuario.criado',
+      ator: { user_id: 99, role: 'member' },
+      recurso: { type: 'user', id: 99 },
+      payload: { email: 'z@z.com', role: 'member' },
+    });
 
     const db = await obterDb();
-    const doc = await db.collection('audit_events').findOne({ type: 'usuario.criado', actor: 99 });
+    const doc = await db
+      .collection('audit_events')
+      .findOne({ event_type: 'usuario.criado', 'actor.user_id': 99 });
 
     expect(doc).not.toBeNull();
-    expect(doc?.entity).toBe('user');
-    expect(doc?.recorded_at).toBeInstanceOf(Date);
+    expect(doc?.resource.type).toBe('user');
+    expect(doc?.event_id).toBeTypeOf('string');
+    expect(doc?.occurred_at).toBeInstanceOf(Date);
   });
 });
