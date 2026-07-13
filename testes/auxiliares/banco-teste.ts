@@ -1,4 +1,5 @@
 import { Pool } from 'pg';
+import { MongoClient } from 'mongodb';
 
 /** Pool para testes de integração, com timeout curto para falhar rápido. */
 export function obterPoolTeste(): Pool {
@@ -30,4 +31,21 @@ export async function truncarTabelas(pool: Pool): Promise<void> {
   await pool.query(
     'TRUNCATE tasks_history, tasks, team_members, teams, users RESTART IDENTITY CASCADE',
   );
+}
+
+/** Verifica se há MongoDB acessível — para pular testes de auditoria sem Mongo. */
+export async function mongoDisponivel(): Promise<boolean> {
+  if (!process.env.MONGODB_URI) return false;
+  const client = new MongoClient(process.env.MONGODB_URI, {
+    serverSelectionTimeoutMS: 1500,
+  });
+  try {
+    await client.connect();
+    await client.db().command({ ping: 1 });
+    return true;
+  } catch {
+    return false;
+  } finally {
+    await client.close();
+  }
 }
