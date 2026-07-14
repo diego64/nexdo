@@ -33,7 +33,8 @@ function obrigatoria(nome: string): string {
 export function carregarConfig(): Config {
   return {
     nodeEnv: process.env.NODE_ENV ?? 'development',
-    porta: Number(process.env.PORTA ?? '3333'),
+    // Render injeta PORT; localmente usamos PORTA (CLAUDE.md §7).
+    porta: Number(process.env.PORT ?? process.env.PORTA ?? '3333'),
     corsOrigens: (process.env.CORS_ORIGENS ?? 'http://localhost:3000')
       .split(',')
       .map((o) => o.trim())

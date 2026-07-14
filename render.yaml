@@ -1,0 +1,30 @@
+# Render Blueprint — API nexdo.
+# Segredos (JWT_SECRET, DATABASE_URL, MONGODB_URI, CORS_ORIGENS) são definidos no
+# dashboard do Render (sync: false) — NUNCA versionados. Node 22 vem do .nvmrc.
+services:
+  - type: web
+    name: nexdo-api
+    runtime: node
+    plan: free
+    branch: main
+    autoDeploy: true
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /saude
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: JWT_EXPIRACAO
+        value: 15m
+      # SSL obrigatório no Supabase (certificado gerenciado).
+      - key: DATABASE_SSL
+        value: 'true'
+      # --- Segredos (preencher no dashboard, sync: false) ---
+      - key: JWT_SECRET
+        sync: false
+      - key: DATABASE_URL # connection string do Supabase (sslmode=require)
+        sync: false
+      - key: MONGODB_URI # MongoDB Atlas (auditoria)
+        sync: false
+      - key: CORS_ORIGENS # origens permitidas, separadas por vírgula
+        sync: false
