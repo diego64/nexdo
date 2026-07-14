@@ -1,11 +1,8 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { Pool } from 'pg';
-import { construirApp } from '../../src/main.js';
-import { carregarConfig } from '../../src/compartilhado/config.js';
-import { fecharPool } from '../../src/infraestrutura/banco/postgres/conexao.js';
-import { migrar } from '../../scripts/migrar.js';
-import { obterPoolTeste, bancoDisponivel, truncarTabelas } from '../auxiliares/banco-teste.js';
+import { iniciarAppDeTeste, encerrarAppDeTeste } from '../auxiliares/app-teste.js';
+import { bancoDisponivel, truncarTabelas } from '../auxiliares/banco-teste.js';
 
 const disponivel = await bancoDisponivel();
 
@@ -16,10 +13,7 @@ describe.skipIf(!disponivel)('Funcionalidade: Autenticação (E2E)', () => {
   let pool: Pool;
 
   beforeAll(async () => {
-    pool = obterPoolTeste();
-    await migrar(pool);
-    app = construirApp(carregarConfig());
-    await app.ready();
+    ({ app, pool } = await iniciarAppDeTeste());
   });
 
   beforeEach(async () => {
@@ -27,9 +21,7 @@ describe.skipIf(!disponivel)('Funcionalidade: Autenticação (E2E)', () => {
   });
 
   afterAll(async () => {
-    await app?.close();
-    await pool?.end();
-    await fecharPool();
+    await encerrarAppDeTeste({ app, pool });
   });
 
   it('deve cadastrar usuário retornando 201 com role member e sem password', async () => {
