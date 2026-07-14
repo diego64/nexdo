@@ -1,5 +1,5 @@
 # Pipeline de Produção — só roda quando a Pré-Produção passou 100%.
-# Push Docker -> Criar Release -> Deploy no Render -> Deploy no Supabase
+# Push Docker -> Criar Release -> Deploy no Render -> Deploy no Supabase -> Smoke test
 name: Produção
 
 on:
@@ -97,10 +97,34 @@ jobs:
 
       - name: Executar migrations SQL em ordem
         env:
-          SUPABASE_DB_URL: ${{ secrets.SUPABASE_DB_URL }}
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
         # Migrations devem ser idempotentes (IF NOT EXISTS)
         run: |
           for arquivo in database/*.sql; do
             echo "Aplicando $arquivo..."
-            psql "$SUPABASE_DB_URL" -v ON_ERROR_STOP=1 -f "$arquivo"
+            psql "$SUPABASE_URL" -v ON_ERROR_STOP=1 -f "$arquivo"
           done
+
+  smoke-test:
+    name: Smoke test | Produção
+    runs-on: ubuntu-latest
+    needs: deploy-supabase
+    steps:
+      - name: Aguardar deploy e checar /saude
+        # URL pública do Render; sobrescrevível pela variável de repo RENDER_APP_URL.
+        env:
+          APP_URL: ${{ vars.RENDER_APP_URL || 'https://nexdo-7wbd.onrender.com' }}
+        run: |
+          echo "Aguardando propagação do deploy no Render..."
+          sleep 30
+          for i in $(seq 1 20); do
+            code=$(curl -s -o resposta.json -w '%{http_code}' --max-time 30 "$APP_URL/saude" || echo 000)
+            echo "tentativa $i: HTTP $code"
+            if [ "$code" = "200" ]; then
+              echo "Health OK: $(cat resposta.json)"
+              exit 0
+            fi
+            sleep 15
+          done
+          echo "::error::Smoke test falhou — $APP_URL/saude nao respondeu 200"
+          exit 1
