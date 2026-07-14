@@ -102,6 +102,13 @@ encontrado · `409` conflito · `500` interno.
 **Body de tarefa:** `{ title, description?, status?, priority?, assigned_to?, team_id }`
 Valores: `status ∈ pending|in_progress|completed` · `priority ∈ high|medium|low`.
 
+### Direitos do titular (LGPD)
+| Método | Rota | Papel | Efeito |
+|---|---|---|---|
+| GET | `/usuarios/me` | autenticado | Retorna os próprios dados (sem `password`) — acesso/portabilidade |
+| PATCH | `/usuarios/me` | autenticado | Corrige `name`/`email` (unicidade → 409) |
+| DELETE | `/usuarios/me` | autenticado | **Anonimiza** o titular (irreversível), preserva `tasks`/`tasks_history` → `204` |
+
 ### Health
 | Método | Rota | Descrição |
 |---|---|---|

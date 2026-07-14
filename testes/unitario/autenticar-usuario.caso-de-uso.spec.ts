@@ -24,6 +24,8 @@ describe('Funcionalidade: Login', () => {
     const repositorio: IUsuarioRepositorio = {
       buscarPorEmail: vi.fn().mockResolvedValue(usuarioFake()),
       buscarPorId: vi.fn(),
+      atualizarPerfil: vi.fn(),
+      anonimizar: vi.fn(),
       criar: vi.fn(),
     };
     const hasher: IHasher = { gerarHash: vi.fn(), comparar: vi.fn().mockResolvedValue(true) };
@@ -45,6 +47,8 @@ describe('Funcionalidade: Login', () => {
     const repositorio: IUsuarioRepositorio = {
       buscarPorEmail: vi.fn().mockResolvedValue(null),
       buscarPorId: vi.fn(),
+      atualizarPerfil: vi.fn(),
+      anonimizar: vi.fn(),
       criar: vi.fn(),
     };
     const hasher: IHasher = { gerarHash: vi.fn(), comparar: vi.fn() };
@@ -64,6 +68,8 @@ describe('Funcionalidade: Login', () => {
     const repositorio: IUsuarioRepositorio = {
       buscarPorEmail: vi.fn().mockResolvedValue(usuarioFake()),
       buscarPorId: vi.fn(),
+      atualizarPerfil: vi.fn(),
+      anonimizar: vi.fn(),
       criar: vi.fn(),
     };
     const hasher: IHasher = { gerarHash: vi.fn(), comparar: vi.fn().mockResolvedValue(false) };

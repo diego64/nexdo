@@ -30,11 +30,15 @@ import { EditarTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/editar-t
 import { ExcluirTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/excluir-tarefa.caso-de-uso.js';
 import { AtribuirTarefaCasoDeUso } from './aplicacao/casos-de-uso/tarefas/atribuir-tarefa.caso-de-uso.js';
 import { ListarHistoricoTarefaCasoDeUso } from './aplicacao/casos-de-uso/historico/listar-historico-tarefa.caso-de-uso.js';
+import { ObterMeuPerfilCasoDeUso } from './aplicacao/casos-de-uso/usuarios/obter-meu-perfil.caso-de-uso.js';
+import { CorrigirMeuPerfilCasoDeUso } from './aplicacao/casos-de-uso/usuarios/corrigir-meu-perfil.caso-de-uso.js';
+import { AnonimizarMeuPerfilCasoDeUso } from './aplicacao/casos-de-uso/usuarios/anonimizar-meu-perfil.caso-de-uso.js';
 import { tratadorDeErros } from './infraestrutura/http/middlewares/erros.middleware.js';
 import { configurarValidacaoPtBr } from './infraestrutura/http/middlewares/validacao.middleware.js';
 import { registrarRotasAutenticacao } from './infraestrutura/http/rotas/autenticacao.rotas.js';
 import { registrarRotasTimes } from './infraestrutura/http/rotas/time.rotas.js';
 import { registrarRotasTarefas } from './infraestrutura/http/rotas/tarefa.rotas.js';
+import { registrarRotasUsuarioMe } from './infraestrutura/http/rotas/usuario-me.rotas.js';
 
 /**
  * Composition root: instancia dependências (injeção manual) e registra rotas.
@@ -78,6 +82,11 @@ export function construirApp(config: Config): FastifyInstance {
   // --- Rotas ---
   app.get('/saude', async () => ({ status: 'ok' }));
   registrarRotasAutenticacao(app, { criarUsuario, autenticar });
+  registrarRotasUsuarioMe(app, {
+    obterMeuPerfil: new ObterMeuPerfilCasoDeUso(usuarioRepositorio, auditoria),
+    corrigirMeuPerfil: new CorrigirMeuPerfilCasoDeUso(usuarioRepositorio, auditoria),
+    anonimizarMeuPerfil: new AnonimizarMeuPerfilCasoDeUso(usuarioRepositorio, hasher, auditoria),
+  });
   registrarRotasTimes(app, {
     criarTime: new CriarTimeCasoDeUso(timeRepositorio, auditoria),
     listarTimes: new ListarTimesCasoDeUso(timeRepositorio),
