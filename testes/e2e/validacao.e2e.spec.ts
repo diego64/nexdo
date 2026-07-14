@@ -1,13 +1,9 @@
 import { describe, it, expect, beforeAll, beforeEach, afterAll } from 'vitest';
 import type { FastifyInstance } from 'fastify';
 import type { Pool } from 'pg';
-import { construirApp } from '../../src/main.js';
-import { carregarConfig } from '../../src/compartilhado/config.js';
-import { fecharPool } from '../../src/infraestrutura/banco/postgres/conexao.js';
-import { fecharMongo } from '../../src/infraestrutura/banco/mongo/conexao.js';
-import { migrar } from '../../scripts/migrar.js';
-import { obterPoolTeste, bancoDisponivel, truncarTabelas } from '../auxiliares/banco-teste.js';
-import { criarUsuarioDireto, obterToken, auth } from '../auxiliares/fabricas.js';
+import { iniciarAppDeTeste, encerrarAppDeTeste } from '../auxiliares/app-teste.js';
+import { bancoDisponivel, truncarTabelas } from '../auxiliares/banco-teste.js';
+import { fabricarUsuario, obterToken, auth } from '../auxiliares/fabricas.js';
 
 const disponivel = await bancoDisponivel();
 
@@ -18,15 +14,12 @@ describe.skipIf(!disponivel)('Funcionalidade: Validação de payloads (E2E)', ()
   let team: number;
 
   beforeAll(async () => {
-    pool = obterPoolTeste();
-    await migrar(pool);
-    app = construirApp(carregarConfig());
-    await app.ready();
+    ({ app, pool } = await iniciarAppDeTeste());
   });
 
   beforeEach(async () => {
     await truncarTabelas(pool);
-    await criarUsuarioDireto(pool, { email: 'admin@x.com', role: 'admin' });
+    await fabricarUsuario(pool, { email: 'admin@x.com', role: 'admin' });
     tokenAdmin = await obterToken(app, 'admin@x.com');
     team = (
       await app.inject({ method: 'POST', url: '/times', headers: auth(tokenAdmin), payload: { name: 'T' } })
@@ -34,10 +27,7 @@ describe.skipIf(!disponivel)('Funcionalidade: Validação de payloads (E2E)', ()
   });
 
   afterAll(async () => {
-    await app?.close();
-    await pool?.end();
-    await fecharPool();
-    await fecharMongo();
+    await encerrarAppDeTeste({ app, pool });
   });
 
   it('POST /tarefas com campo extra → 400 apontando o campo', async () => {

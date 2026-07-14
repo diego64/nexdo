@@ -6,7 +6,7 @@ import { StatusTarefa } from '../../src/dominio/enums/status-tarefa.js';
 import { PrioridadeTarefa } from '../../src/dominio/enums/prioridade-tarefa.js';
 import { migrar } from '../../scripts/migrar.js';
 import { obterPoolTeste, bancoDisponivel, truncarTabelas } from '../auxiliares/banco-teste.js';
-import { criarUsuarioDireto } from '../auxiliares/fabricas.js';
+import { fabricarUsuario } from '../auxiliares/fabricas.js';
 
 const disponivel = await bancoDisponivel();
 
@@ -34,7 +34,7 @@ describe.skipIf(!disponivel)('Funcionalidade: Histórico transacional (integraç
   });
 
   async function semear(): Promise<{ userId: number; taskId: number }> {
-    const userId = await criarUsuarioDireto(pool, { email: 'u@x.com', role: 'member' });
+    const userId = await fabricarUsuario(pool, { email: 'u@x.com', role: 'member' });
     const { rows: t } = await pool.query<{ id: number }>(
       `INSERT INTO teams (name) VALUES ('T') RETURNING id`,
     );
