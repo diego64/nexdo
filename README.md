@@ -4,10 +4,6 @@ API de **Gerenciamento de Tarefas** em Node.js. Usuários criam contas, autentic
 JWT e gerenciam tarefas atribuídas a membros de times, classificadas por status e
 prioridade, com histórico de mudanças e auditoria de eventos.
 
-Construído com **Spec-Driven Development (SDD) + BDD** — nenhuma funcionalidade sem SPEC em
-[`.specs/`](.specs/) e cenários passando. As regras do projeto vivem em
-[`CLAUDE.md`](CLAUDE.md) (fonte de verdade).
-
 ## Stack
 
 | Camada | Tecnologia |
