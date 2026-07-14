@@ -72,10 +72,12 @@ describe.skipIf(!disponivel)('Funcionalidade: Direitos do titular / LGPD (E2E)',
         payload: { title: 'X', team_id: time.id, assigned_to: titularId },
       })
     ).json();
+    // A mudança de status é feita pelo próprio titular (tarefa atribuída a ele) →
+    // tasks_history.changed_by = titularId, o que queremos ver preservado.
     await ctx.app.inject({
       method: 'PUT',
       url: `/tarefas/${tarefa.id}`,
-      headers: auth(tokenAdmin),
+      headers: auth(tokenTitular),
       payload: { status: 'in_progress' },
     });
 
