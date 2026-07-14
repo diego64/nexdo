@@ -1,0 +1,264 @@
+{
+  "info": {
+    "name": "nexdo API",
+    "description": "Coleção de testes locais da API nexdo. Use o environment 'nexdo local'.\n\nFluxo sugerido: Auth → Login (admin) salva o {{token}} automaticamente → Times → Tarefas.\nIDs criados (time, tarefa) são salvos em variáveis de ambiente para encadear as chamadas.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "auth": {
+    "type": "bearer",
+    "bearer": [{ "key": "token", "value": "{{token}}", "type": "string" }]
+  },
+  "variable": [{ "key": "baseUrl", "value": "http://localhost:3333" }],
+  "item": [
+    {
+      "name": "Health",
+      "item": [
+        {
+          "name": "GET /saude",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/saude", "host": ["{{baseUrl}}"], "path": ["saude"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "POST /usuarios (cadastro)",
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Ana\",\n  \"email\": \"ana@nexdo.local\",\n  \"password\": \"senha1234\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/usuarios", "host": ["{{baseUrl}}"], "path": ["usuarios"] }
+          }
+        },
+        {
+          "name": "POST /sessoes (login admin -> salva token)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.token) { pm.environment.set('token', json.token); }",
+                  "pm.test('200 com token', () => pm.expect(pm.response.code).to.eql(200));"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "noauth" },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"{{adminEmail}}\",\n  \"password\": \"{{adminSenha}}\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/sessoes", "host": ["{{baseUrl}}"], "path": ["sessoes"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Direitos do titular (LGPD)",
+      "item": [
+        {
+          "name": "GET /usuarios/me",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/usuarios/me", "host": ["{{baseUrl}}"], "path": ["usuarios", "me"] }
+          }
+        },
+        {
+          "name": "PATCH /usuarios/me",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Nome Corrigido\"\n}" },
+            "url": { "raw": "{{baseUrl}}/usuarios/me", "host": ["{{baseUrl}}"], "path": ["usuarios", "me"] }
+          }
+        },
+        {
+          "name": "DELETE /usuarios/me (anonimiza)",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/usuarios/me", "host": ["{{baseUrl}}"], "path": ["usuarios", "me"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Times",
+      "item": [
+        {
+          "name": "POST /times (-> salva timeId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) { pm.environment.set('timeId', json.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Plataforma\",\n  \"description\": \"Time da plataforma\"\n}" },
+            "url": { "raw": "{{baseUrl}}/times", "host": ["{{baseUrl}}"], "path": ["times"] }
+          }
+        },
+        {
+          "name": "GET /times",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/times?pagina=1&limite=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["times"],
+              "query": [
+                { "key": "pagina", "value": "1" },
+                { "key": "limite", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "PUT /times/:id",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"name\": \"Plataforma (novo nome)\"\n}" },
+            "url": { "raw": "{{baseUrl}}/times/{{timeId}}", "host": ["{{baseUrl}}"], "path": ["times", "{{timeId}}"] }
+          }
+        },
+        {
+          "name": "POST /times/:id/membros",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"user_id\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/times/{{timeId}}/membros", "host": ["{{baseUrl}}"], "path": ["times", "{{timeId}}", "membros"] }
+          }
+        },
+        {
+          "name": "GET /times/:id/membros",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/times/{{timeId}}/membros", "host": ["{{baseUrl}}"], "path": ["times", "{{timeId}}", "membros"] }
+          }
+        },
+        {
+          "name": "DELETE /times/:id/membros/:userId",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/times/{{timeId}}/membros/2", "host": ["{{baseUrl}}"], "path": ["times", "{{timeId}}", "membros", "2"] }
+          }
+        },
+        {
+          "name": "DELETE /times/:id",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/times/{{timeId}}", "host": ["{{baseUrl}}"], "path": ["times", "{{timeId}}"] }
+          }
+        }
+      ]
+    },
+    {
+      "name": "Tarefas",
+      "item": [
+        {
+          "name": "POST /tarefas (-> salva tarefaId)",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.id) { pm.environment.set('tarefaId', json.id); }"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Primeira tarefa\",\n  \"description\": \"Detalhes\",\n  \"priority\": \"high\",\n  \"team_id\": {{timeId}}\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/tarefas", "host": ["{{baseUrl}}"], "path": ["tarefas"] }
+          }
+        },
+        {
+          "name": "GET /tarefas (com filtros)",
+          "request": {
+            "method": "GET",
+            "url": {
+              "raw": "{{baseUrl}}/tarefas?status=pending&prioridade=high&pagina=1&limite=20",
+              "host": ["{{baseUrl}}"],
+              "path": ["tarefas"],
+              "query": [
+                { "key": "status", "value": "pending" },
+                { "key": "prioridade", "value": "high" },
+                { "key": "pagina", "value": "1" },
+                { "key": "limite", "value": "20" }
+              ]
+            }
+          }
+        },
+        {
+          "name": "GET /tarefas/:id",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaId}}", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaId}}"] }
+          }
+        },
+        {
+          "name": "PUT /tarefas/:id (muda status)",
+          "request": {
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"status\": \"in_progress\"\n}" },
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaId}}", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaId}}"] }
+          }
+        },
+        {
+          "name": "PATCH /tarefas/:id/atribuir",
+          "request": {
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": { "mode": "raw", "raw": "{\n  \"user_id\": 2\n}" },
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaId}}/atribuir", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaId}}", "atribuir"] }
+          }
+        },
+        {
+          "name": "GET /tarefas/:id/historico",
+          "request": {
+            "method": "GET",
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaId}}/historico", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaId}}", "historico"] }
+          }
+        },
+        {
+          "name": "DELETE /tarefas/:id",
+          "request": {
+            "method": "DELETE",
+            "url": { "raw": "{{baseUrl}}/tarefas/{{tarefaId}}", "host": ["{{baseUrl}}"], "path": ["tarefas", "{{tarefaId}}"] }
+          }
+        }
+      ]
+    }
+  ]
+}

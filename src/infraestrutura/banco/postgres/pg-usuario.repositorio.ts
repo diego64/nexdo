@@ -2,6 +2,8 @@ import type { Pool } from 'pg';
 import { Usuario } from '../../../dominio/entidades/usuario.entidade.js';
 import type { PapelUsuario } from '../../../dominio/enums/papel-usuario.js';
 import type {
+  DadosAnonimizacao,
+  DadosPerfil,
   IUsuarioRepositorio,
   NovoUsuario,
 } from '../../../dominio/repositorios/usuario.repositorio.js';
@@ -52,5 +54,22 @@ export class PgUsuarioRepositorio implements IUsuarioRepositorio {
   async buscarPorId(id: number): Promise<Usuario | null> {
     const { rows } = await this.pool.query<LinhaUsuario>('SELECT * FROM users WHERE id = $1', [id]);
     return rows[0] ? paraEntidade(rows[0]) : null;
+  }
+
+  async atualizarPerfil(id: number, dados: DadosPerfil): Promise<Usuario | null> {
+    const { rows } = await this.pool.query<LinhaUsuario>(
+      `UPDATE users SET name = $2, email = $3 WHERE id = $1 RETURNING *`,
+      [id, dados.name, dados.email],
+    );
+    return rows[0] ? paraEntidade(rows[0]) : null;
+  }
+
+  async anonimizar(id: number, dados: DadosAnonimizacao): Promise<boolean> {
+    // Preserva o id (FKs de tasks/tasks_history intactas); scrub de name/email/senha.
+    const { rowCount } = await this.pool.query(
+      `UPDATE users SET name = $2, email = $3, password = $4 WHERE id = $1`,
+      [id, dados.name, dados.email, dados.senhaHash],
+    );
+    return (rowCount ?? 0) > 0;
   }
 }

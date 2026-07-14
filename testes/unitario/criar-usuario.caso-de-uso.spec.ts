@@ -31,6 +31,8 @@ describe('Funcionalidade: Cadastro de usuário', () => {
     const repositorio: IUsuarioRepositorio = {
       buscarPorEmail: vi.fn().mockResolvedValue(null),
       buscarPorId: vi.fn(),
+      atualizarPerfil: vi.fn(),
+      anonimizar: vi.fn(),
       criar: vi.fn().mockResolvedValue(usuarioFake()),
     };
     const caso = new CriarUsuarioCasoDeUso(repositorio, hasher, auditoria);
@@ -57,6 +59,8 @@ describe('Funcionalidade: Cadastro de usuário', () => {
     const repositorio: IUsuarioRepositorio = {
       buscarPorEmail: vi.fn().mockResolvedValue(usuarioFake()),
       buscarPorId: vi.fn(),
+      atualizarPerfil: vi.fn(),
+      anonimizar: vi.fn(),
       criar: vi.fn(),
     };
     const caso = new CriarUsuarioCasoDeUso(repositorio, hasher, auditoria);
