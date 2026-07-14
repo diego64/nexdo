@@ -136,12 +136,14 @@ curl -X POST http://localhost:3333/tarefas \
 
 ## Deploy
 
+- **URL pública:** https://nexdo-7wbd.onrender.com — health: [`/saude`](https://nexdo-7wbd.onrender.com/saude)
 - **Backend:** Render (Blueprint em [`render.yaml`](render.yaml)) — build `pnpm build`, start
   `pnpm start`, health check `/saude`.
 - **Banco:** Supabase (PostgreSQL, SSL) · **Auditoria:** MongoDB Atlas.
 - Segredos via env vars do Render (`JWT_SECRET`, `DATABASE_URL`, `MONGODB_URI`, `CORS_ORIGENS`).
 
-> URL pública: _a definir_ (`https://<app>.onrender.com`).
+> Após provisionar o Supabase, rode as migrações e o seed apontando para a
+> `DATABASE_URL` de produção: `DATABASE_SSL=true pnpm db:migrar && DATABASE_SSL=true pnpm db:seed`.
 
 ## Testes
 
