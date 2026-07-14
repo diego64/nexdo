@@ -1,7 +1,7 @@
 {
   "name": "nexdo",
   "version": "0.1.0",
-  "description": "API de Gerenciamento de Tarefas — Spec-Driven Development",
+  "description": "API de Gerenciamento de Tarefas",
   "type": "module",
   "private": true,
   "packageManager": "pnpm@10.23.0",
@@ -27,8 +27,10 @@
   },
   "dependencies": {
     "@fastify/cors": "^10.0.2",
-    "@fastify/jwt": "^9.0.3",
-    "bcrypt": "^5.1.1",
+    "@fastify/helmet": "^13.0.1",
+    "@fastify/jwt": "^10.2.0",
+    "@fastify/rate-limit": "^11.0.1",
+    "bcrypt": "^6.0.0",
     "dotenv": "^16.4.7",
     "fastify": "^5.2.1",
     "mongodb": "^6.12.0",
