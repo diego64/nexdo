@@ -2,6 +2,8 @@ import 'dotenv/config';
 import { pathToFileURL } from 'node:url';
 import Fastify, { type FastifyInstance } from 'fastify';
 import fastifyCors from '@fastify/cors';
+import fastifyHelmet from '@fastify/helmet';
+import fastifyRateLimit from '@fastify/rate-limit';
 import fastifyJwt from '@fastify/jwt';
 import { carregarConfig, type Config } from './compartilhado/config.js';
 import { obterPool } from './infraestrutura/banco/postgres/conexao.js';
@@ -44,6 +46,13 @@ export function construirApp(config: Config): FastifyInstance {
   });
 
   configurarValidacaoPtBr(); // mensagens de validação Zod em PT-BR (SPEC 07)
+
+  // Hardening (OWASP API8/API4): cabeçalhos de segurança + rate limiting.
+  app.register(fastifyHelmet);
+  // Rate limit desativado em testes (E2E fazem muitas requisições da mesma origem).
+  if (config.nodeEnv !== 'test') {
+    app.register(fastifyRateLimit, { max: 100, timeWindow: '1 minute' });
+  }
 
   app.register(fastifyCors, { origin: config.corsOrigens });
   app.register(fastifyJwt, {
