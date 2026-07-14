@@ -95,6 +95,17 @@ jobs:
         with:
           ref: ${{ github.event.workflow_run.head_sha }}
 
+      - name: Validar connection string do Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+        # Evita o erro confuso de socket local quando o secret não é uma URI Postgres
+        # (ex.: colaram a Project URL https://... em vez da connection string).
+        run: |
+          case "$SUPABASE_URL" in
+            postgresql://*|postgres://*) echo "Connection string OK" ;;
+            *) echo "::error::SUPABASE_URL deve ser a connection string do Postgres (postgresql://...), use o Session pooler do Supabase — não a Project URL"; exit 1 ;;
+          esac
+
       - name: Executar migrations SQL em ordem
         env:
           SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
@@ -113,7 +124,7 @@ jobs:
       - name: Aguardar deploy e checar /saude
         # URL pública do Render; sobrescrevível pela variável de repo RENDER_APP_URL.
         env:
-          APP_URL: ${{ vars.RENDER_APP_URL || 'https://nexdo-7wbd.onrender.com' }}
+          APP_URL: ${{ vars.RENDER_APP_URL }}
         run: |
           echo "Aguardando propagação do deploy no Render..."
           sleep 30
