@@ -186,12 +186,3 @@ scripts/                # migrar.ts, seed.ts
 testes/                 # unitario, integracao, e2e, carga, auxiliares
 observabilidade/        # provisioning Grafana, config Tempo
 ```
-
-Fluxo de dependência: `http → casos-de-uso → dominio ← infraestrutura` (o domínio nunca
-importa de fora).
-
-## Documentação viva
-
-- [`CLAUDE.md`](CLAUDE.md) — constituição do projeto (regras, convenções, arquitetura)
-- [`.specs/`](.specs/) — SPECs numeradas, contratos e memória (progresso, decisões)
-- [`.specs/contratos/`](.specs/contratos/) — modelo de dados, contrato HTTP, eventos de auditoria
